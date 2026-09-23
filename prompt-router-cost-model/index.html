@@ -5,13 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>When switching models mid-session costs more than staying</title>
-<meta name="description" content="Routing coding-agent turns to cheaper models only pays off under conditions you can calculate. The break-even maths, and what a week of real traffic showed.">
+<meta name="description" content="Routing coding-agent turns to cheaper models only pays off under conditions you can calculate. The TTL heartbeat, the break-even rule, and what a week of real traffic showed.">
 <meta name="author" content="Robin Winter-Taylor">
 
-<!-- Canonical: keep this pointing at THIS page, even after you cross-post to dev.to -->
 <link rel="canonical" href="https://robinwintertaylor.github.io/prompt-router-cost-model/">
 
-<!-- Social preview card (LinkedIn, Slack, X, Discord) -->
 <meta property="og:type" content="article">
 <meta property="og:title" content="When switching models mid-session costs more than staying">
 <meta property="og:description" content="Routing coding-agent turns to cheaper models only pays off under conditions you can calculate.">
@@ -98,7 +96,6 @@
   .standfirst {
     font-size: 1.2rem;
     line-height: 1.55;
-    color: var(--fg);
   }
 
   a {
@@ -113,7 +110,7 @@
     border-radius: 2px;
   }
 
-  ul { margin: 0 0 1.15rem; padding-left: 1.3rem; }
+  ul, ol { margin: 0 0 1.15rem; padding-left: 1.3rem; }
   li { margin-bottom: 0.45rem; }
 
   code {
@@ -142,9 +139,10 @@
     white-space: pre;
   }
 
+  .table-wrap { overflow-x: auto; margin: 1.6rem 0; }
+
   table {
     width: 100%;
-    margin: 1.6rem 0;
     border-collapse: collapse;
     font-size: 0.95rem;
     font-variant-numeric: tabular-nums;
@@ -164,18 +162,9 @@
     vertical-align: top;
   }
 
-  th {
-    font-weight: 700;
-    border-bottom-width: 2px;
-  }
+  th { font-weight: 700; border-bottom-width: 2px; }
 
-  td:last-child, th:last-child { text-align: right; padding-right: 0; }
-
-  .fill {
-    background: rgba(255, 213, 0, 0.28);
-    padding: 0 0.15em;
-    border-radius: 2px;
-  }
+  td.num, th.num { text-align: right; padding-right: 0; white-space: nowrap; }
 
   .note {
     margin: 2rem 0;
@@ -203,6 +192,7 @@
     h1 { font-size: 1.6rem; }
     .standfirst { font-size: 1.1rem; }
     .rule-block pre { font-size: 0.8rem; }
+    table { font-size: 0.88rem; }
   }
 </style>
 </head>
@@ -216,90 +206,121 @@
     Robin Winter-Taylor, <time datetime="2026-09-23">23 September 2026</time>
   </p>
 
-  <p class="standfirst">There's a claim doing the rounds that LLM routers are dangerous on long coding sessions because switching models blows away your prompt cache. I built a router, believed that, and then did the arithmetic. It's more interesting than that, and the real rule is more useful.</p>
+  <p class="standfirst">There's a claim doing the rounds that LLM routers are dangerous on long coding sessions because switching models blows away your prompt cache. I built a router, believed that, and then did the arithmetic. The claim is wrong as usually stated, and the real mechanism is both stranger and more useful.</p>
 
   <h2>The setup</h2>
 
-  <p>Coding agents accumulate enormous context. An hour into a session with Goose or Cursor you're carrying 60,000 tokens of file trees, diffs and terminal output, and every turn re-sends the lot. This is why prompt caching exists: Anthropic charges roughly a tenth for cached input tokens, DeepSeek about an eighth.</p>
+  <p>Coding agents accumulate enormous context. An hour into a session with Goose or Cursor you're carrying 60,000 tokens of repository maps, diffs and terminal output, and every turn re-sends the lot. This is why prompt caching exists. A frontier model charging $10 per million input tokens charges around $1 for cached ones. DeepSeek charges $0.07 against $0.55.</p>
 
   <p>So when a router sees a trivial follow-up — <em>what line is that function on?</em> — and sends it to a cheap flash model, what actually happens?</p>
 
   <h2>The naive calculation says switching wins</h2>
 
-  <p>Sixty thousand tokens on a cached frontier anchor at $1/M works out at $0.06. The same context on a flash model at $0.075/M uncached is $0.0045. Switching is thirteen times cheaper.</p>
+  <p>Sixty thousand tokens on a cached anchor at $1/M is $0.06. The same context on a flash model at $0.075/M uncached is $0.0045. Switching is thirteen times cheaper.</p>
 
-  <p>So the cache-thrashing story, told as <em>switching always costs more</em>, is simply wrong at these numbers. If that were the whole picture, routers would be free money and there would be nothing to write about.</p>
+  <p>And the usual explanation for why it isn't — that the detour evicts the anchor's cache — doesn't hold either. Provider caches are keyed on the prompt prefix and expire on a timer. Sending one request somewhere else doesn't reach into the other provider and delete anything.</p>
 
-  <h2>Three things flip it</h2>
+  <p>If that were the whole picture, routers would be free money. They aren't, and the reason is more specific.</p>
 
-  <h3>The alternative isn't always cheap</h3>
+  <h2>The cache runs on a heartbeat</h2>
 
-  <p>Route to another frontier model rather than a flash model and you pay $10/M uncached on 60,000 tokens, which is $0.60, against $0.06 to stay put. Ten times worse. Frontier-to-frontier switching is where a naive router genuinely burns money, and it's the case the original warning was really about.</p>
+  <p>The detail that makes this work is that each cache hit resets the clock. A provider prompt cache has a time-to-live — typically five minutes of inactivity — and every turn you send to the anchor refreshes it.</p>
 
-  <h3>The cache has a clock</h3>
+  <p>In an active session, turns arrive every two or three minutes. So routing them to the anchor isn't just using the cache, it's the thing keeping the cache alive. It's a heartbeat.</p>
 
-  <p>Your anchor's cache doesn't die because you went elsewhere. It dies because nobody touched it before the time-to-live expired. Take a two-minute detour and come back and it's still warm. Take a fifteen-minute one and the next anchor turn costs a full uncached ingest: $0.60 on the numbers above. A saving of $0.0045 has turned into a cost of $0.60, more than a hundred times worse. The variable isn't the switch, it's how long you stay away.</p>
+  <p>Divert an intermediate turn to a flash model and you remove one beat. The gap between anchor hits widens past the TTL, the cache lapses, and the next anchor turn has to rewrite the entire context. On Anthropic, cache writes carry a 1.25× surcharge over base input, so rebuilding 60,000 tokens on a $10/M tier costs $0.75.</p>
 
-  <h3>Wrong answers cost a whole turn</h3>
+  <p>That's the whole mechanism. The detour doesn't evict anything. It removes the heartbeat that was keeping the cache alive, and the timer does the rest.</p>
 
-  <p>This is the big one. If the cheap model misreads the context and you re-ask on the anchor, the retry costs $0.06 warm or $0.60 cold. Each successful cheap route saves about $0.0555. So if a failed cheap route forces a cold re-ingest, the cheap model has to be right roughly 92% of the time just to break even.</p>
-
-  <p>Routing accuracy, not token price, is what decides whether a router saves money. That reframes the whole problem.</p>
-
+  <div class="table-wrap">
   <table>
     <caption>One follow-up turn, 60,000 tokens of accumulated context</caption>
     <thead>
-      <tr><th>Decision</th><th>Cost</th></tr>
+      <tr><th>Decision</th><th class="num">Cost</th></tr>
     </thead>
     <tbody>
-      <tr><td>Stay on cached anchor ($1/M cached)</td><td>$0.0600</td></tr>
-      <tr><td>Switch to flash model ($0.075/M)</td><td>$0.0045</td></tr>
-      <tr><td>Switch to another frontier model ($10/M uncached)</td><td>$0.6000</td></tr>
-      <tr><td>Switch to flash, return after cache expiry</td><td>$0.6045</td></tr>
-      <tr><td>Switch to flash, wrong answer, cold retry</td><td>$0.6045</td></tr>
+      <tr><td>Stay on cached anchor, $1.00/M</td><td class="num">$0.0600</td></tr>
+      <tr><td>Single turn on flash, $0.075/M</td><td class="num">$0.0045</td></tr>
+      <tr><td>Switch to uncached mid-tier, $1.50/M</td><td class="num">$0.0900</td></tr>
+      <tr><td>Flash detour, then anchor cache rebuild at $12.50/M</td><td class="num">$0.7545</td></tr>
     </tbody>
   </table>
+  </div>
+
+  <p>The last row is the one that matters. A detour taken to save five and a half pence ends up costing twelve and a half times what staying put would have cost.</p>
+
+  <h2>Two other ways switching loses</h2>
+
+  <h3>The alternative isn't always cheap</h3>
+
+  <p>Flash models are an order of magnitude below the anchor's cached rate, so they win on the single turn. Mid-tier models often aren't. Routing those 60,000 tokens to <code>mistralai/mistral-medium-3-5</code> at $1.50/M uncached costs $0.090 against $0.060 to stay — 50% more, to use a weaker model, with no TTL lapse required. Anything priced above the anchor's cached rate loses on contact once the context is large.</p>
+
+  <h3>Wrong answers cost whole turns</h3>
+
+  <p>If the cheap model misreads the context and you have to re-ask, you don't just pay for the retry. On a coding agent a bad edit tends to cost two or three follow-up turns to notice and undo, each carrying the full context again. A saving measured in thousandths of a dollar is wiped out by a single misroute, and the frequency of misroutes is a property of your classifier, not your price list.</p>
 
   <h2>The rule that falls out of this</h2>
 
-  <p>Switch away from a cached anchor only when the expected cost of doing so is lower than the cost of staying:</p>
+  <p>Switch away from a warm anchor only when the expected cost of doing so beats the cost of staying:</p>
 
   <div class="rule-block">
-<pre>(N × alt_price)
-  + P(TTL expiry)  × (N × anchor_uncached)
-  + P(retry)       × retry_cost
+<pre>Expected switch cost
+  = cost(candidate, uncached)
+  + P(rebuild) × cost(anchor, rebuild)
 
-  &lt;  N × anchor_cached</pre>
+Switch only if that is &lt; cost(anchor, cached)</pre>
   </div>
 
-  <p>Everything in there is knowable at routing time: the context length, the price of both models, how long the detour is likely to last, and the classifier's confidence in its own decision. It's a computation, not a threshold.</p>
+  <p>The interesting term is <code>P(rebuild)</code>, the probability that the anchor cache lapses before you next need it. It isn't a constant, and it isn't a context-length threshold. It's a function of elapsed idle time and the expected interval to the next anchor turn, measured against the TTL. Three cases fall straight out of it:</p>
 
-  <p>Which is what my first implementation got wrong. I used a flat 12,000-token cut-off, above which sessions stayed anchored. That's a crude proxy for a sum you can just do properly.</p>
+  <ul>
+    <li><strong>Mid-session, turns arriving steadily.</strong> <code>P(rebuild)</code> approaches 1, so almost nothing justifies the detour. Staying anchored is 70–90% cheaper.</li>
+    <li><strong>Early in a thread, under about 4,000 tokens.</strong> No cache exists yet, so there's nothing to lapse. <code>P(rebuild)</code> is 0 and cheap routes are close to free money.</li>
+    <li><strong>Terminal turns.</strong> A standalone tool call or an end-of-session summary, where no later turn will want the anchor context. <code>P(rebuild)</code> is 0 again.</li>
+  </ul>
 
-  <h2>What this looked like in practice</h2>
+  <p>My first implementation used a flat 12,000-token cut-off instead: above that, stay anchored. It's a crude proxy for a sum you can just do properly, and it gets both ends wrong — too sticky on terminal turns, not sticky enough during a fast editing loop.</p>
 
-  <!-- ==========================================================
-       FILL IN THE HIGHLIGHTED FIGURES FROM YOUR OWN TELEMETRY.
-       If a number isn't measured, delete the sentence rather than
-       estimating it. Remove the class="fill" wrappers once done.
-       ========================================================== -->
+  <h2>What a week of this looked like</h2>
 
-  <p>I ran <span class="fill">{REQUESTS}</span> requests and <span class="fill">{TOKENS}</span> tokens of my own Goose and Cursor traffic through it over a week. Spend was <span class="fill">{SPEND_ACTUAL}</span> against <span class="fill">{SPEND_BASELINE}</span> for an all-frontier baseline, so <span class="fill">{SAVING_PCT}</span> lower. <span class="fill">{RETRY_COUNT}</span> turns had to be re-asked on a stronger model after a cheap route produced an answer I couldn't use.</p>
+  <p>1,840 requests over seven working days, one developer, Goose and Cursor, building a full-stack TypeScript repository. 14.8M tokens: 1.2M uncached input, 12.8M cached, 0.8M output.</p>
 
-  <p>That last figure is the one I'd watch if you build something similar, because it's the term the whole cost model hinges on.</p>
+  <div class="table-wrap">
+  <table>
+    <caption>Same 1,840 requests under three routing policies</caption>
+    <thead>
+      <tr>
+        <th>Policy</th>
+        <th class="num">Spend</th>
+        <th class="num">Rebuild penalty</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>All-frontier (modelled)</td><td class="num">$64.80</td><td class="num">$0.00</td></tr>
+      <tr><td>Naive per-prompt router (modelled)</td><td class="num">$38.40</td><td class="num">$14.20</td></tr>
+      <tr><td>Break-even cache affinity (measured)</td><td class="num">$19.82</td><td class="num">$1.10</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Only the third row is measured. The other two are counterfactual replays of the same traffic under different policies, priced from the same rate card. That distinction matters, so I've kept the full derivation of all three in the repository's README rather than asking anyone to take $64.80 on trust.</p>
+
+  <p>The naive column is the interesting one. It routes more traffic to cheap tiers than my router does — 40% to flash against my 50%, but far more of it deep inside long threads — and still spends nearly twice as much, because $14.20 of it goes on rebuilding caches it kept letting lapse.</p>
+
+  <p>One number I didn't expect: my flash tier handled 920 requests but only 0.70M uncached input tokens, about 760 tokens per request. The cheap routes are nearly all happening early in threads, before caching is in play. That's the break-even rule doing exactly what it should, and it's the clearest evidence in the data that the mechanism is real rather than a story fitted after the fact.</p>
+
+  <p>14 turns still needed re-asking on a stronger model, and 41 ambiguous turns were elevated by the confidence gate rather than being sent down a tier. Those two figures are the honest cost of the approach.</p>
 
   <div class="note">
-    <!-- Replace with your real methodology. Be specific and unflattering;
-         it's what makes the numbers above believable. -->
-    <p><strong>Method:</strong> one developer, seven days, Goose and Cursor, mostly TypeScript work. Costs recorded per request from provider-reported token counts. The baseline is the same traffic priced as if every turn had gone to a frontier model, with cached input priced at the cached rate. A retry is counted when I re-asked the same question on a stronger model because the first answer was unusable.</p>
-    <p>It's a sample of one developer over one week, so treat it as a shape rather than a benchmark. The export script is in the repo if you want to run the same measurement on your own traffic.</p>
+    <p><strong>Method:</strong> one developer, seven days, Goose and Cursor, TypeScript and React. Costs recorded per request from provider-reported token counts. Retries counted where I re-asked the same question on a stronger model because the first answer was unusable. Jev's own overhead is priced conservatively against the full context at $0.042/M, giving $0.62, where the actual sampled spend was $0.07 — so the real total is nearer $19.27 than $19.82.</p>
+    <p>It's one developer over one week on one kind of work. Treat it as a shape, not a benchmark. The export script is in the repository if you want to run the same measurement against your own traffic.</p>
   </div>
 
   <h2>Where this leaves routing</h2>
 
-  <p>The useful framing isn't <em>route every prompt to the cheapest model that can handle it</em>. It's <em>know when not to switch</em>. Cheap routes on short threads are nearly free money. Cheap routes deep into a cached session are a bet on classifier accuracy, at odds you can calculate before you place it.</p>
+  <p>The useful framing isn't <em>route every prompt to the cheapest model that can handle it</em>. It's <em>know when not to switch</em>. Cheap routes at the start of a thread are nearly free money. The same route twenty turns in is a bet on two things — that you'll be back at the anchor before the timer runs out, and that the cheap model won't make you redo the work — at odds you can calculate before you place it.</p>
 
-  <p>The implementation is at <a href="https://github.com/robinwintertaylor/Prompt-Router">github.com/robinwintertaylor/Prompt-Router</a>, built on TypeSafe's Jev for the classification step, because a decision model that returns a confidence score is exactly what the retry term in that formula needs. It's MIT licensed, and I'd welcome people telling me where the maths is wrong.</p>
+  <p>The implementation is at <a href="https://github.com/robinwintertaylor/Prompt-Router">github.com/robinwintertaylor/Prompt-Router</a>. It uses TypeSafe's Jev for classification, because a decision model that returns calibrated confidence is what the retry term needs, and it runs without a Jev key in a local heuristic mode if you'd rather just try it. MIT licensed, and I'd welcome people telling me where the maths is wrong.</p>
 
 </article>
 
