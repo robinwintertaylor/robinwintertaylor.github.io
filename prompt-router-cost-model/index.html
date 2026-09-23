@@ -15,8 +15,8 @@
 <meta property="og:description" content="Routing coding-agent turns to cheaper models only pays off under conditions you can calculate.">
 <meta property="og:url" content="https://robinwintertaylor.github.io/prompt-router-cost-model/">
 <meta property="og:image" content="https://robinwintertaylor.github.io/assets/og-cost-model.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
+<meta property="og:image:width" content="920">
+<meta property="og:image:height" content="480">
 <meta property="og:site_name" content="Robin Winter-Taylor">
 <meta name="twitter:card" content="summary_large_image">
 
@@ -24,21 +24,33 @@
 
 <style>
   :root {
+    /* Gateway Teal, carried through from the project */
+    --accent:      #0D47A1;
+    --accent-soft: rgba(13, 71, 161, 0.07);
+    --spark:       #8AA600;   /* muted Jev yellow-green, legible on light */
+
     --bg:      #fbfbf9;
     --fg:      #1b1b1d;
     --muted:   #6b6b70;
-    --accent:  #12467e;
     --rule:    #e3e3dd;
     --code-bg: #f2f2ee;
+
+    --serif: "Iowan Old Style", "Charter", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans:  "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+
     --measure: 36rem;
   }
 
   @media (prefers-color-scheme: dark) {
     :root {
+      --accent:      #6BA8F5;
+      --accent-soft: rgba(107, 168, 245, 0.10);
+      --spark:       #C6FF00;
+
       --bg:      #15161a;
       --fg:      #e6e6e8;
       --muted:   #96969e;
-      --accent:  #8fbcf0;
       --rule:    #2c2d33;
       --code-bg: #1e1f25;
     }
@@ -50,59 +62,83 @@
 
   body {
     margin: 0 auto;
-    padding: 4rem 1.5rem 7rem;
+    padding: 2rem 1.5rem 7rem;
     max-width: var(--measure);
     background: var(--bg);
     color: var(--fg);
-    font-family: "Iowan Old Style", "Charter", "Palatino Linotype", Palatino, Georgia, serif;
+    font-family: var(--serif);
     font-size: 1.125rem;
     line-height: 1.7;
     text-rendering: optimizeLegibility;
   }
 
+  /* ---- Masthead ---- */
+
+  .masthead {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 3.5rem;
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  .masthead a { color: var(--fg); text-decoration: none; }
+  .masthead a:hover { color: var(--accent); }
+
+  .dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--spark);
+    flex: none;
+  }
+
+  /* ---- Type ---- */
+
+  h1, h2, h3 { font-family: var(--sans); letter-spacing: -0.021em; }
+
   h1 {
-    margin: 0 0 0.6rem;
-    font-size: 2rem;
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: -0.012em;
+    margin: 0 0 0.75rem;
+    font-size: 2.1rem;
+    font-weight: 750;
+    line-height: 1.15;
   }
 
   h2 {
-    margin: 3rem 0 0.8rem;
-    font-size: 1.3rem;
+    margin: 3.25rem 0 0.9rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+    font-size: 1.22rem;
     font-weight: 700;
     line-height: 1.3;
-    letter-spacing: -0.008em;
   }
 
   h3 {
     margin: 2rem 0 0.5rem;
-    font-size: 1.08rem;
-    font-weight: 700;
+    font-size: 1.02rem;
+    font-weight: 650;
     line-height: 1.35;
+    color: var(--accent);
   }
 
   p { margin: 0 0 1.15rem; }
 
   .byline {
-    margin: 0 0 2.75rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--rule);
+    margin: 0 0 2.5rem;
+    font-family: var(--sans);
+    font-size: 0.88rem;
     color: var(--muted);
-    font-size: 0.95rem;
   }
 
   .standfirst {
     font-size: 1.2rem;
     line-height: 1.55;
+    padding-bottom: 0.5rem;
   }
 
-  a {
-    color: var(--accent);
-    text-decoration-thickness: 1px;
-    text-underline-offset: 2px;
-  }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
 
   a:focus-visible {
     outline: 2px solid var(--accent);
@@ -114,96 +150,143 @@
   li { margin-bottom: 0.45rem; }
 
   code {
-    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
-    font-size: 0.88em;
+    font-family: var(--mono);
+    font-size: 0.86em;
     background: var(--code-bg);
     padding: 0.12em 0.34em;
     border-radius: 3px;
   }
 
-  /* The break-even rule is the centrepiece of the argument, so it gets the
-     one piece of emphasis on the page. */
+  /* ---- The break-even rule: the one decorated element ---- */
+
   .rule-block {
     margin: 1.8rem 0;
     padding: 1.25rem 1.4rem;
     border-left: 3px solid var(--accent);
-    background: var(--code-bg);
+    background: var(--accent-soft);
     overflow-x: auto;
   }
 
   .rule-block pre {
     margin: 0;
-    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+    font-family: var(--mono);
     font-size: 0.9rem;
     line-height: 1.6;
     white-space: pre;
   }
+
+  /* ---- Tables ---- */
 
   .table-wrap { overflow-x: auto; margin: 1.6rem 0; }
 
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.95rem;
+    font-family: var(--sans);
+    font-size: 0.92rem;
     font-variant-numeric: tabular-nums;
   }
 
   caption {
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.7rem;
+    font-family: var(--sans);
+    font-size: 0.85rem;
     color: var(--muted);
-    font-size: 0.9rem;
     text-align: left;
   }
 
   th, td {
-    padding: 0.55rem 0.7rem 0.55rem 0;
+    padding: 0.6rem 0.7rem;
     border-bottom: 1px solid var(--rule);
     text-align: left;
     vertical-align: top;
   }
 
-  th { font-weight: 700; border-bottom-width: 2px; }
+  th:first-child, td:first-child { padding-left: 0.5rem; }
 
-  td.num, th.num { text-align: right; padding-right: 0; white-space: nowrap; }
+  th {
+    font-weight: 650;
+    border-bottom-width: 2px;
+  }
+
+  td.num, th.num { text-align: right; white-space: nowrap; padding-right: 0.5rem; }
+
+  /* The row the whole argument turns on */
+  tr.key { background: var(--accent-soft); }
+  tr.key td { font-weight: 650; border-bottom-color: var(--accent); }
+
+  /* ---- Figure ---- */
+
+  figure { margin: 2.25rem 0; }
+
+  figure img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+  }
+
+  figcaption {
+    margin-top: 0.7rem;
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  /* ---- Method note ---- */
 
   .note {
     margin: 2rem 0;
-    padding-left: 1.1rem;
-    border-left: 2px solid var(--rule);
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    font-family: var(--sans);
+    font-size: 0.93rem;
+    line-height: 1.6;
     color: var(--muted);
-    font-size: 1rem;
   }
 
-  .note p { margin-bottom: 0.6rem; }
+  .note p { margin-bottom: 0.7rem; }
   .note p:last-child { margin-bottom: 0; }
+  .note strong { color: var(--fg); }
 
   footer {
     margin-top: 4.5rem;
     padding-top: 1.5rem;
     border-top: 1px solid var(--rule);
+    font-family: var(--sans);
+    font-size: 0.9rem;
     color: var(--muted);
-    font-size: 0.95rem;
   }
 
-  footer p { margin-bottom: 0.5rem; }
+  footer p { margin-bottom: 0.45rem; }
 
   @media (max-width: 34rem) {
-    body { padding: 2.5rem 1.15rem 5rem; font-size: 1.06rem; }
-    h1 { font-size: 1.6rem; }
+    body { padding: 1.5rem 1.15rem 5rem; font-size: 1.06rem; }
+    h1 { font-size: 1.65rem; }
+    h2 { font-size: 1.12rem; margin-top: 2.5rem; }
     .standfirst { font-size: 1.1rem; }
     .rule-block pre { font-size: 0.8rem; }
-    table { font-size: 0.88rem; }
+    table { font-size: 0.85rem; }
+    th, td { padding: 0.5rem 0.4rem; }
   }
 </style>
 </head>
 <body>
+
+<div class="masthead">
+  <span class="dot"></span>
+  <a href="/">Robin Winter-Taylor</a>
+</div>
 
 <article>
 
   <h1>When switching models mid-session costs more than staying</h1>
 
   <p class="byline">
-    Robin Winter-Taylor, <time datetime="2026-09-23">23 September 2026</time>
+    <time datetime="2026-10-05">5 October 2026</time>
   </p>
 
   <p class="standfirst">There's a claim doing the rounds that LLM routers are dangerous on long coding sessions because switching models blows away your prompt cache. I built a router, believed that, and then did the arithmetic. The claim is wrong as usually stated, and the real mechanism is both stranger and more useful.</p>
@@ -242,7 +325,7 @@
       <tr><td>Stay on cached anchor, $1.00/M</td><td class="num">$0.0600</td></tr>
       <tr><td>Single turn on flash, $0.075/M</td><td class="num">$0.0045</td></tr>
       <tr><td>Switch to uncached mid-tier, $1.50/M</td><td class="num">$0.0900</td></tr>
-      <tr><td>Flash detour, then anchor cache rebuild at $12.50/M</td><td class="num">$0.7545</td></tr>
+      <tr class="key"><td>Flash detour, then anchor cache rebuild at $12.50/M</td><td class="num">$0.7545</td></tr>
     </tbody>
   </table>
   </div>
@@ -285,6 +368,13 @@ Switch only if that is &lt; cost(anchor, cached)</pre>
 
   <p>1,840 requests over seven working days, one developer, Goose and Cursor, building a full-stack TypeScript repository. 14.8M tokens: 1.2M uncached input, 12.8M cached, 0.8M output.</p>
 
+  <!-- Drop your dashboard screenshot at /assets/dashboard.png.
+       A still is fine here; the GIF belongs on the repo README. -->
+  <figure>
+    <img src="/assets/dashboard.png" alt="Prompt-Router telemetry dashboard showing actual spend against an all-frontier baseline, with routing distribution across model tiers">
+    <figcaption>The gateway records cost per request against a counterfactual all-frontier baseline. Every figure below comes out of this ledger.</figcaption>
+  </figure>
+
   <div class="table-wrap">
   <table>
     <caption>Same 1,840 requests under three routing policies</caption>
@@ -298,7 +388,7 @@ Switch only if that is &lt; cost(anchor, cached)</pre>
     <tbody>
       <tr><td>All-frontier (modelled)</td><td class="num">$64.80</td><td class="num">$0.00</td></tr>
       <tr><td>Naive per-prompt router (modelled)</td><td class="num">$38.40</td><td class="num">$14.20</td></tr>
-      <tr><td>Break-even cache affinity (measured)</td><td class="num">$19.82</td><td class="num">$1.10</td></tr>
+      <tr class="key"><td>Break-even cache affinity (measured)</td><td class="num">$19.82</td><td class="num">$1.10</td></tr>
     </tbody>
   </table>
   </div>
@@ -312,7 +402,7 @@ Switch only if that is &lt; cost(anchor, cached)</pre>
   <p>14 turns still needed re-asking on a stronger model, and 41 ambiguous turns were elevated by the confidence gate rather than being sent down a tier. Those two figures are the honest cost of the approach.</p>
 
   <div class="note">
-    <p><strong>Method:</strong> one developer, seven days, Goose and Cursor, TypeScript and React. Costs recorded per request from provider-reported token counts. Retries counted where I re-asked the same question on a stronger model because the first answer was unusable. Jev's own overhead is priced conservatively against the full context at $0.042/M, giving $0.62, where the actual sampled spend was $0.07 — so the real total is nearer $19.27 than $19.82.</p>
+    <p><strong>Method.</strong> One developer, seven days, Goose and Cursor, TypeScript and React. Costs recorded per request from provider-reported token counts. Retries counted where I re-asked the same question on a stronger model because the first answer was unusable. Jev's own overhead is priced conservatively against the full context at $0.042/M, giving $0.62, where the actual sampled spend was $0.07 — so the real total is nearer $19.27 than $19.82.</p>
     <p>It's one developer over one week on one kind of work. Treat it as a shape, not a benchmark. The export script is in the repository if you want to run the same measurement against your own traffic.</p>
   </div>
 
