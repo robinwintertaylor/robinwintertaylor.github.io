@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>When switching models mid-session costs more than staying</title>
+<title>Your prompt cache has a heartbeat, and naive LLM routers stop it</title>
 <meta name="description" content="Routing coding-agent turns to cheaper models only pays off under conditions you can calculate. The TTL heartbeat, the break-even rule, and what a week of real traffic showed.">
 <meta name="author" content="Robin Winter-Taylor">
 
 <link rel="canonical" href="https://robinwintertaylor.github.io/prompt-router-cost-model/">
 
 <meta property="og:type" content="article">
-<meta property="og:title" content="When switching models mid-session costs more than staying">
+<meta property="og:title" content="Your prompt cache has a heartbeat, and naive LLM routers stop it">
 <meta property="og:description" content="Routing coding-agent turns to cheaper models only pays off under conditions you can calculate.">
 <meta property="og:url" content="https://robinwintertaylor.github.io/prompt-router-cost-model/">
 <meta property="og:image" content="https://robinwintertaylor.github.io/assets/og-cost-model.png">
@@ -283,7 +283,7 @@
 
 <article>
 
-  <h1>When switching models mid-session costs more than staying</h1>
+  <h1>Your prompt cache has a heartbeat, and naive LLM routers stop it</h1>
 
   <p class="byline">
     <time datetime="2026-09-23">23 September 2026</time>
@@ -402,15 +402,23 @@ Switch only if that is &lt; cost(anchor, cached)</pre>
   <p>14 turns still needed re-asking on a stronger model, and 41 ambiguous turns were elevated by the confidence gate rather than being sent down a tier. Those two figures are the honest cost of the approach.</p>
 
   <div class="note">
-    <p><strong>Method.</strong> One developer, seven days, Goose and Cursor, TypeScript and React. Costs recorded per request from provider-reported token counts. Retries counted where I re-asked the same question on a stronger model because the first answer was unusable. Jev's own overhead is priced conservatively against the full context at $0.042/M, giving $0.62, where the actual sampled spend was $0.07 — so the real total is nearer $19.27 than $19.82.</p>
+    <p><strong>Method.</strong> One developer, seven days, Goose and Cursor, TypeScript and React. Costs recorded per request from provider-reported token counts. Retries counted where I re-asked the same question on a stronger model because the first answer was unusable. Classification latency is excluded from the cost figures and discussed separately below.</p>
     <p>It's one developer over one week on one kind of work. Treat it as a shape, not a benchmark. The export script is in the repository if you want to run the same measurement against your own traffic.</p>
   </div>
+
+  <h2>A note on the classifier</h2>
+
+  <p>The routing decision itself has to come from somewhere, and I used TypeSafe's Jev because it returns calibrated probabilities rather than a label. The retry term in the rule above is weighted by confidence, so a classifier that only says <em>flash</em> without saying how sure it is can't feed the calculation.</p>
+
+  <p>What I'd weigh differently now is latency rather than price. A hosted classifier sits in the request path, so its round trip is added to every turn — and third-party measurements put Jev nearer 240–370ms than the bottom of its stated 70–500ms range. Local typed-decision models run an order of magnitude faster, around 30ms on a laptop, because there's no network hop at all.</p>
+
+  <p>The catch is that the small local models are weak zero-shot on this kind of task and need fine-tuning on your own distribution to be competitive, and they ship overconfident until their temperature is refit — which breaks the confidence gate until you fix it. For a narrow, repeated decision like tier selection, with a few hundred logged examples to fine-tune on, I'd expect a local model to win. That's the next thing I want to test rather than something I've measured.</p>
 
   <h2>Where this leaves routing</h2>
 
   <p>The useful framing isn't <em>route every prompt to the cheapest model that can handle it</em>. It's <em>know when not to switch</em>. Cheap routes at the start of a thread are nearly free money. The same route twenty turns in is a bet on two things — that you'll be back at the anchor before the timer runs out, and that the cheap model won't make you redo the work — at odds you can calculate before you place it.</p>
 
-  <p>The implementation is at <a href="https://github.com/robinwintertaylor/Prompt-Router">github.com/robinwintertaylor/Prompt-Router</a>. It uses TypeSafe's Jev for classification, because a decision model that returns calibrated confidence is what the retry term needs, and it runs without a Jev key in a local heuristic mode if you'd rather just try it. MIT licensed, and I'd welcome people telling me where the maths is wrong.</p>
+  <p>The implementation is at <a href="https://github.com/robinwintertaylor/Prompt-Router">github.com/robinwintertaylor/Prompt-Router</a>. It uses TypeSafe's Jev for classification today, falls back to local heuristics when that isn't available, and I'd take a pluggable local model over both. MIT licensed, and I'd welcome people telling me where the maths is wrong.</p>
 
 </article>
 
