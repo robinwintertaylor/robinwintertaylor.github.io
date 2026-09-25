@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>AI made the prototype cheap. Now the sign-offs set the schedule.</title>
+<meta name="description" content="Rapid application development was built on the idea that prototypes were expensive. AI has removed most of that cost, and what's left on the critical path is waiting for decisions. What a two-week cycle looks like when you book them in advance.">
+<meta name="author" content="Robin Winter-Taylor">
+
+<link rel="canonical" href="https://robinwintertaylor.github.io/sign-offs-set-the-schedule/">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="AI made the prototype cheap. Now the sign-offs set the schedule.">
+<meta property="og:description" content="Rapid application development, 35 years on: when the build takes three days, a four-day wait for a signature is longer than the build.">
+<meta property="og:url" content="https://robinwintertaylor.github.io/sign-offs-set-the-schedule/">
+<meta property="og:image" content="https://robinwintertaylor.github.io/assets/og-sign-offs.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="627">
+<meta property="og:site_name" content="Robin Winter-Taylor">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9889;</text></svg>">
+
+<style>
+  :root {
+    /* Site palette, matching the home page */
+    --accent:      #12467e;
+    --accent-soft: rgba(18, 70, 126, 0.07);
+    --build:       rgba(18, 70, 126, 0.22);
+
+    --bg:      #fbfbf9;
+    --fg:      #1b1b1d;
+    --muted:   #6b6b70;
+    --rule:    #e3e3dd;
+    --code-bg: #f2f2ee;
+
+    --serif: "Iowan Old Style", "Charter", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans:  "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+
+    --measure: 36rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --accent:      #8fbcf0;
+      --accent-soft: rgba(143, 188, 240, 0.10);
+      --build:       rgba(143, 188, 240, 0.28);
+
+      --bg:      #15161a;
+      --fg:      #e6e6e8;
+      --muted:   #96969e;
+      --rule:    #2c2d33;
+      --code-bg: #1e1f25;
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0 auto;
+    padding: 2rem 1.5rem 7rem;
+    max-width: var(--measure);
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--serif);
+    font-size: 1.125rem;
+    line-height: 1.7;
+    text-rendering: optimizeLegibility;
+  }
+
+  .masthead {
+    margin-bottom: 3.5rem;
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .masthead a { color: var(--fg); text-decoration: none; }
+  .masthead a:hover { color: var(--accent); }
+
+  h1, h2, h3 { font-family: var(--sans); letter-spacing: -0.021em; }
+
+  h1 { margin: 0 0 0.75rem; font-size: 2.1rem; font-weight: 750; line-height: 1.15; }
+
+  h2 {
+    margin: 3.25rem 0 0.9rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+    font-size: 1.22rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  p { margin: 0 0 1.15rem; }
+
+  .byline { margin: 0 0 2.5rem; font-family: var(--sans); font-size: 0.88rem; color: var(--muted); }
+  .standfirst { font-size: 1.2rem; line-height: 1.55; padding-bottom: 0.5rem; }
+
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+  ul { margin: 0 0 1.15rem; padding-left: 1.3rem; }
+  li { margin-bottom: 0.45rem; }
+
+  .rule-block {
+    margin: 1.8rem 0;
+    padding: 1.25rem 1.4rem;
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    overflow-x: auto;
+  }
+  .rule-block pre { margin: 0; font-family: var(--mono); font-size: 0.9rem; line-height: 1.6; white-space: pre; }
+
+  .table-wrap { overflow-x: auto; margin: 1.6rem 0; }
+  table { width: 100%; border-collapse: collapse; font-family: var(--sans); font-size: 0.92rem; }
+  caption { margin-bottom: 0.7rem; font-size: 0.85rem; color: var(--muted); text-align: left; }
+  th, td { padding: 0.6rem 0.7rem; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+  th:first-child, td:first-child { padding-left: 0.5rem; white-space: nowrap; }
+  th { font-weight: 650; border-bottom-width: 2px; }
+  tr.key { background: var(--accent-soft); }
+  tr.key td { font-weight: 650; border-bottom-color: var(--accent); }
+
+  figure { margin: 2.25rem 0; }
+  figure svg { display: block; width: 100%; height: auto; }
+  .tl-day   { fill: none; stroke: var(--rule); stroke-width: 1; }
+  .tl-build { fill: var(--build); }
+  .tl-loop  { fill: var(--build); opacity: 0.45; }
+  .tl-gate  { fill: var(--accent); }
+  .tl-text  { fill: var(--muted); font-family: var(--sans); font-size: 11px; }
+  .tl-week  { fill: var(--fg); font-family: var(--sans); font-size: 11px; font-weight: 650; }
+  figcaption { margin-top: 0.7rem; font-family: var(--sans); font-size: 0.85rem; line-height: 1.5; color: var(--muted); }
+
+  .note {
+    margin: 2rem 0;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    font-family: var(--sans);
+    font-size: 0.93rem;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+  .note p { margin-bottom: 0.7rem; }
+  .note p:last-child { margin-bottom: 0; }
+  .note strong { color: var(--fg); }
+
+  footer {
+    margin-top: 4.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+    font-family: var(--sans);
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  footer p { margin-bottom: 0.45rem; }
+
+  @media (max-width: 34rem) {
+    body { padding: 1.5rem 1.15rem 5rem; font-size: 1.06rem; }
+    h1 { font-size: 1.65rem; }
+    h2 { font-size: 1.12rem; margin-top: 2.5rem; }
+    .standfirst { font-size: 1.1rem; }
+    .rule-block pre { font-size: 0.8rem; }
+    table { font-size: 0.85rem; }
+    th, td { padding: 0.5rem 0.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="masthead"><a href="/">Robin Winter-Taylor</a></div>
+
+<article>
+
+  <h1>AI made the prototype cheap. Now the sign-offs set the schedule.</h1>
+
+  <p class="byline"><time datetime="2026-09-29">29 September 2026</time></p>
+
+  <p class="standfirst">Rapid application development was formalised in 1991 on two ideas: users learn what they need by using working software, and building that software is the expensive part. AI has removed most of the second problem. When I laid out a two-week delivery cycle day by day, building took under three of the ten days. Nearly everything else was waiting for someone to decide something, and it turns out RAD had an answer to that too. Two real projects have since been through it. One did two weeks of work in four weeks of calendar. The other showed me a limit that neither RAD nor my timetable had planned for.</p>
+
+  <h2>The old idea</h2>
+
+  <p>James Martin's <em>Rapid Application Development</em> came out in 1991, built on iterative prototyping work from the previous decade. The method is simple to state. You gather requirements in workshops with the people who will use the thing, rather than in documents they will skim. You build prototypes they can react to, work to a fixed timebox, and reuse components wherever you can.</p>
+
+  <p>Three years later Dai Clegg and Richard Barker, at Oracle, added the piece most teams still use without knowing where it came from: MoSCoW. If the date is fixed, scope has to be what moves, and sorting requirements into Must, Should, Could and Won't makes that negotiation explicit instead of leaving it to the last week.</p>
+
+  <p>RAD was fighting one constraint. Every prototype cost developer time, environments and weeks of calendar. The tools of the era tried to bring that cost down and helped, but not enough. So what most organisations kept was the vocabulary, words like MVP and iteration, while the releases quietly grew back to their old size.</p>
+
+  <h2>What changed</h2>
+
+  <p>With AI assistance, a first working version of a narrow internal tool is days of work rather than weeks. The requirements document can be drafted from the kickoff notes in an hour, and the test scripts can be drafted from that.</p>
+
+  <p>I'm deliberately not quoting a speed-up multiplier. I haven't measured one, and the published figures vary too much to lean on. The argument only needs a weaker claim: building is no longer the longest item in the plan.</p>
+
+  <h2>The obvious conclusion is wrong</h2>
+
+  <p>The received wisdom is that AI makes delivery faster because it makes code faster. Keep your process, add AI, and ship sooner.</p>
+
+  <p>Do the sum on a two-week cycle. In the baseline timetable below, the first build occupies Wednesday afternoon to Friday afternoon of the first week, which is under three days. If AI made those days vanish entirely, the cycle would still be seven days long. The other seven are testing, releasing and, above all, decisions.</p>
+
+  <p>The usual response to that is to blame governance and cut it. That's also wrong. Every gate in the cycle exists to prevent a specific failure:</p>
+
+  <ul>
+    <li>security review stops a tool reading data it shouldn't;</li>
+    <li>change approval stops an untested release;</li>
+    <li>the user's sign-off stops the team building the wrong thing quickly.</li>
+  </ul>
+
+  <p>Faster generation makes all three more necessary, not less. The gates themselves are short, fifteen or thirty minutes each in the timetable. What's slow is the queue in front of each one: the change board that meets next Thursday, the security reviewer's inbox, the product owner who is on leave.</p>
+
+  <h2>The calendar is the critical path</h2>
+
+  <p>When a build took six weeks, a sign-off that waited four days was noise. When the build takes three days, a four-day wait for a signature is longer than the build. The bottleneck didn't disappear when AI arrived. It moved from the developer's keyboard to everybody else's diary.</p>
+
+  <p>So the cycle I designed treats decisions the way RAD treated the timebox. Every sign-off is booked into a named slot at kickoff, before a line of code exists.</p>
+
+  <figure>
+    <svg viewBox="0 0 600 132" role="img" aria-labelledby="tl-title tl-desc">
+      <title id="tl-title">Ten working days, showing build time and sign-offs</title>
+      <desc id="tl-desc">Building is shaded from day 3 afternoon to day 5 afternoon, with lighter optional review loops across days 6 to 8. Sign-offs fall on days 2, 3, 5, 6, 9 (two) and 10.</desc>
+      <text class="tl-week" x="10" y="14">Week 1</text>
+      <text class="tl-week" x="300" y="14">Week 2</text>
+      <!-- day cells: x = 10 + i*58, width 56 -->
+      <rect class="tl-day" x="10"  y="46" width="56" height="40" rx="3"/>
+      <rect class="tl-day" x="68"  y="46" width="56" height="40" rx="3"/>
+      <rect class="tl-day" x="126" y="46" width="56" height="40" rx="3"/>
+      <rect class="tl-day" x="184" y="46" width="56" height="40" rx="3"/>
+      <rect class="tl-day" x="242" y="46" width="56" height="40" rx="3"/>
+      <rect class="tl-day" x="300" y="46" width="56" height="40" rx="3"/>
+      <rect class="tl-day" x="358" y="46" width="56" height="40" rx="3"/>
+      <rect class="tl-day" x="416" y="46" width="56" height="40" rx="3"/>
+      <rect class="tl-day" x="474" y="46" width="56" height="40" rx="3"/>
+      <rect class="tl-day" x="532" y="46" width="56" height="40" rx="3"/>
+      <!-- build: day 3 afternoon, day 4, day 5 until the demo -->
+      <rect class="tl-build" x="154" y="47" width="28" height="38"/>
+      <rect class="tl-build" x="184" y="47" width="56" height="38"/>
+      <rect class="tl-build" x="242" y="47" width="36" height="38"/>
+      <!-- optional build-review loops, days 6 to 8 -->
+      <rect class="tl-loop" x="328" y="47" width="28" height="38"/>
+      <rect class="tl-loop" x="358" y="47" width="56" height="38"/>
+      <rect class="tl-loop" x="416" y="47" width="28" height="38"/>
+      <!-- sign-offs -->
+      <g class="tl-gate">
+        <path d="M96 26 l6 6 -6 6 -6 -6z"/>
+        <path d="M140 26 l6 6 -6 6 -6 -6z"/>
+        <path d="M280 26 l6 6 -6 6 -6 -6z"/>
+        <path d="M328 26 l6 6 -6 6 -6 -6z"/>
+        <path d="M494 26 l6 6 -6 6 -6 -6z"/>
+        <path d="M512 26 l6 6 -6 6 -6 -6z"/>
+        <path d="M560 26 l6 6 -6 6 -6 -6z"/>
+      </g>
+      <g class="tl-text" text-anchor="middle">
+        <text x="38"  y="102">1</text><text x="96"  y="102">2</text><text x="154" y="102">3</text>
+        <text x="212" y="102">4</text><text x="270" y="102">5</text><text x="328" y="102">6</text>
+        <text x="386" y="102">7</text><text x="444" y="102">8</text><text x="502" y="102">9</text>
+        <text x="560" y="102">10</text>
+      </g>
+      <rect class="tl-build" x="10" y="116" width="14" height="10"/>
+      <text class="tl-text" x="30" y="125">Building</text>
+      <path class="tl-gate" d="M112 115 l6 6 -6 6 -6 -6z"/>
+      <text class="tl-text" x="124" y="125">Sign-off, booked at kickoff</text>
+      <rect class="tl-loop" x="300" y="116" width="14" height="10"/>
+      <text class="tl-text" x="320" y="125">Optional review loops</text>
+    </svg>
+    <figcaption>The baseline cycle. The first build is the solid block in week 1, with optional review loops in week 2 if people are available to review quickly. The diamonds are the seven decisions it all depends on.</figcaption>
+  </figure>
+
+  <div class="table-wrap">
+  <table>
+    <caption>The ten days, as designed</caption>
+    <thead>
+      <tr><th>Day</th><th>What happens</th><th>Decision</th></tr>
+    </thead>
+    <tbody>
+      <tr class="key"><td>1</td><td>90-minute kickoff; AI drafts the requirements and a MoSCoW list from the notes</td><td>Every later decision slot booked</td></tr>
+      <tr><td>2</td><td>Team stand-up; scope and design workshop; requirements sent to security</td><td>User signs off scope and design</td></tr>
+      <tr><td>3</td><td>Test scripts drafted; assurance checkpoint; build starts</td><td>Security signs off by noon</td></tr>
+      <tr><td>4</td><td>Build</td><td></td></tr>
+      <tr><td>5</td><td>Build; first version demonstrated</td><td>User signs off direction</td></tr>
+      <tr><td>6</td><td>Test users named; review loops begin if reviewers are available</td><td>Test scenarios approved</td></tr>
+      <tr><td>7</td><td>Change request raised; review loops; unit and integration testing</td><td></td></tr>
+      <tr><td>8</td><td>User acceptance testing; assurance checkpoint</td><td></td></tr>
+      <tr><td>9</td><td>Defects closed</td><td>Change approval (conditional), then go/no-go</td></tr>
+      <tr><td>10</td><td>Release</td><td>User's final sign-off</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>The timetable is a baseline, not a fixed sequence. If the user and developer can turn reviews round quickly, the demo on day five becomes the first of several short loops: build a change, show it, take the feedback into the next change. That can run into days six to eight. The loops refine the agreed Musts. Anything genuinely new goes to the next cycle as a Should or a Could, and the next section explains why that line matters more than I expected.</p>
+
+  <p>Notice what sets the pace of those loops. Each change takes hours to build. The loop is as long as the wait for someone to look at it, so the same thing is on the critical path at every scale: the diary, not the keyboard.</p>
+
+  <h2>The rule</h2>
+
+  <div class="rule-block">
+<pre>Fix the date.        Flex the scope.       (RAD, 1991–94)
+Book the decisions.  Before the build.    (what AI adds)
+
+If a sign-off can't be booked at kickoff,
+it isn't a two-week project.</pre>
+  </div>
+
+  <p>This is recognisably Martin's idea extended. His workshops put decision-makers in the room so requirements were agreed in days rather than months. Clegg's timebox fixed the date so that scope had to give. Booking the sign-offs applies the same move to governance: once you fix when each decision happens, scope is the only thing left to negotiate, which is where RAD always wanted the negotiation to be.</p>
+
+  <h2>What it asks of people</h2>
+
+  <p>The cost of the approach falls on the people who aren't developers, and it should be stated plainly before anyone agrees to it.</p>
+
+  <ul>
+    <li><strong>The product owner</strong> commits at least three and a quarter hours of meetings across the two weeks, plus a day of acceptance testing, and more if they take part in review loops. That's 90 minutes at kickoff and 15 minutes for the scope sign-off, then 30 minutes each for the demo, test readiness and go/no-go.</li>
+    <li><strong>The developer</strong> directs and reviews an AI agent's work rather than writing all of it. That's a different job, and it has to be learned. Expect the first cycle to be slower.</li>
+    <li><strong>Security</strong> agrees to turn a requirements document round in under a day.</li>
+    <li><strong>The change board</strong> agrees to consider a change with two days' notice, approving it conditionally on the go/no-go that afternoon. That works where I've used it. With several streams running at once, expect to stagger the slots rather than hold every cycle to the same days.</li>
+  </ul>
+
+  <p>If any of those can't be agreed, the plan fails at kickoff. That's the correct place for it to fail.</p>
+
+  <h2>What two real projects showed</h2>
+
+  <p>Two projects have now been through the cycle. Neither finished in ten working days, and neither for the reason I expected.</p>
+
+  <div class="table-wrap">
+  <table>
+    <caption>Two projects against the ten-day plan (approximate, from the project records)</caption>
+    <thead>
+      <tr><th>Project</th><th>Hands-on work</th><th>Elapsed</th><th>What stretched it</th></tr>
+    </thead>
+    <tbody>
+      <tr class="key"><td>A</td><td>About 2 weeks</td><td>About 4 weeks</td><td>Waiting for meetings with the customer; a developer new to supervising an AI agent</td></tr>
+      <tr><td>B</td><td>Kept growing</td><td>Several weeks over</td><td>The customer redesigned their own process during the review loops</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p><strong>Project A did the work on time and still took twice as long.</strong> The hands-on effort fitted the two weeks. The calendar didn't, because the cycle paused each time it needed the customer in a room and resumed once a meeting could be found. By the timetable's own accounting it didn't overrun. By the calendar it took four weeks. I'd rather report the second number, because it's the one the customer experienced, and it's the clearest evidence I have for the argument above: the work took two weeks, and the waiting took the other two.</p>
+
+  <p>The same project surfaced a second issue I hadn't planned for. The developer's job in this cycle is less writing the code than directing an AI agent that writes it, then reviewing what comes back. That is a supervisory skill, and nobody is born with it. It's a training problem rather than a flaw in the process, but anyone introducing this should budget for a slower first cycle per developer.</p>
+
+  <p><strong>Project B overran for a reason no gate was designed to catch.</strong> The customer hadn't settled how they did the work in the first place. Each review loop worked exactly as intended: it put something real in front of them. What it prompted wasn't feedback on the tool, though. It prompted them to rethink their own process. Each rethink came back as a new feature, the next loop prompted another, and the build became the way they were redesigning how their team worked.</p>
+
+  <p>That was genuinely valuable. It just wasn't application development, and a two-week timebox can't absorb it. RAD quietly assumes that the process being automated is stable, and that users are discovering what they need from the software, not what they do. When the prototype becomes a process-design tool, the scope stops converging.</p>
+
+  <p>The fix is at kickoff, which already asks the customer to walk through today's process step by step. That question is now a gate. If they can't walk it through cleanly, or the answer changes during the walk-through, the work is process redesign first and a build second. The two are scoped separately, and the build starts once the process holds still.</p>
+
+  <h2>Where it doesn't work</h2>
+
+  <ul>
+    <li><strong>Processes the customer hasn't settled.</strong> See project B. The review loops will surface the redesign, and the timebox won't survive it.</li>
+    <li><strong>A customer who can't commit the time.</strong> See project A. Pausing the clock hides the problem rather than fixing it. Book their slots at kickoff, or plan for the elapsed time honestly.</li>
+    <li><strong>A team's first cycle.</strong> Supervising an agent is a skill to learn before it's a speed-up.</li>
+    <li><strong>Change boards that need more notice.</strong> This is the most likely break point. If yours needs a week, raise the request on day one or accept a three-week cycle; don't pretend.</li>
+    <li><strong>Anything with procurement, data migration, or integration with a system you don't control.</strong> Those are other people's calendars, and you can't book them.</li>
+    <li><strong>Anything bigger than a minimum viable product.</strong> The cycle delivers the Musts. The Shoulds come in the next cycle, if it's worth running.</li>
+    <li><strong>Unreviewed AI output.</strong> The requirements document AI drafts on day one is a draft. The day-two sign-off is the point where a human reads it properly, and if that meeting becomes a formality, the whole design stops being safe.</li>
+  </ul>
+
+  <div class="note">
+    <p><strong>What this is based on.</strong> A two-week timetable and kickoff script I wrote for a team building small internal AI tools, and two projects that have been through it. The day counts, gate counts and hours in the timetable sections are counted from the baseline design. The project figures are approximate: hands-on and elapsed time taken from the project records, rounded to the week.</p>
+    <p>Two projects is an anecdote, not a benchmark. I'll publish planned-against-actual properly once there are enough cycles to say something about which gate slips first.</p>
+  </div>
+
+  <h2>Take it and break it</h2>
+
+  <p>The kickoff script and the day-by-day timetable are at <a href="https://github.com/robinwintertaylor/rad-kit">github.com/robinwintertaylor/rad-kit</a>, blanked and licensed CC BY 4.0, so you can adapt them without asking.</p>
+
+  <p>The thing I most want to hear is what breaks first in your organisation. I expected it to be the change board. So far it's been the customer's diary and the customer's own process, and the timetable was only designed to catch one of those. If yours is something else again, I'd rather know before I write the follow-up than after.</p>
+
+</article>
+
+<footer>
+  <p>Templates: <a href="https://github.com/robinwintertaylor/rad-kit">github.com/robinwintertaylor/rad-kit</a> (CC BY 4.0)</p>
+  <p>Views my own.</p>
+  <p><a href="/">More writing</a></p>
+</footer>
+
+</body>
+</html>
